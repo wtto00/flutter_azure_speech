@@ -48,6 +48,12 @@ class AzureSpeech {
         break;
       case "azureSpeech.onRecognizerSessionStarted":
         onRecognizerSessionStarted?.call();
+        _clearRecognizerTimer();
+        if (_silenceTimeout.compareTo(Duration.zero) > 0) {
+          _recognizerTimer = Timer(_silenceTimeout, () {
+            stopRecognition();
+          });
+        }
         break;
       case "azureSpeech.onRecognizerSessionStopped":
         onRecognizerSessionStopped?.call();
