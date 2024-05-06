@@ -1,0 +1,41 @@
+PODS:
+  - azure_speech (0.0.1):
+    - Flutter
+    - MicrosoftCognitiveServicesSpeech-iOS (~> 1.37.0)
+  - Flutter (1.0.0)
+  - integration_test (0.0.1):
+    - Flutter
+  - MicrosoftCognitiveServicesSpeech-iOS (1.37.0)
+  - permission_handler_apple (9.3.0):
+    - Flutter
+
+DEPENDENCIES:
+  - azure_speech (from `.symlinks/plugins/azure_speech/ios`)
+  - Flutter (from `Flutter`)
+  - integration_test (from `.symlinks/plugins/integration_test/ios`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+
+SPEC REPOS:
+  trunk:
+    - MicrosoftCognitiveServicesSpeech-iOS
+
+EXTERNAL SOURCES:
+  azure_speech:
+    :path: ".symlinks/plugins/azure_speech/ios"
+  Flutter:
+    :path: Flutter
+  integration_test:
+    :path: ".symlinks/plugins/integration_test/ios"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
+
+SPEC CHECKSUMS:
+  azure_speech: 05d695ec2eb8db9466bce2c836159d13a9cd103a
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  integration_test: 13825b8a9334a850581300559b8839134b124670
+  MicrosoftCognitiveServicesSpeech-iOS: 766852ccd56e0c74bafbe9ea7033083c5f748d04
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+
+PODFILE CHECKSUM: ae124c36b8a35af4d2c9775f3a76b035c9b3d00b
+
+COCOAPODS: 1.15.0

@@ -1,7 +1,7 @@
 name: azure_speech
 description: "A new Flutter plugin project."
 version: 0.0.1
-homepage:
+homepage: https://github.com/wtto00/flutter_azure_speech
 
 environment:
   sdk: '>=3.3.4 <4.0.0'

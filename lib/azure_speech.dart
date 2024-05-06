@@ -26,8 +26,32 @@ class AzureSpeech {
   VoidCallback? onRecognizerSessionStarted;
   // Recognizer has been stopped.
   VoidCallback? onRecognizerSessionStopped;
+  // Recognizer Start Detected.
+  VoidCallback? onRecognizerStartDetected;
+  // Recognizer End Detected.
+  VoidCallback? onRecognizerEndDetected;
   // volume changed
   VolumeResultHandler? onVolumeChange;
+  // Synthesizer Connecte
+  VoidCallback? onSynthesizerConnected;
+  // Synthesizer Disconnecte
+  VoidCallback? onSynthesizerDisconnected;
+  // Synthesizer Message Received
+  VoidCallback? onSynthesizerMessageReceived;
+  // Synthesizing
+  VoidCallback? onSynthesizing;
+  // Synthesizer Started
+  VoidCallback? onSynthesizerStarted;
+  // Synthesizer Completed
+  VoidCallback? onSynthesizerCompleted;
+  // Synthesizer Bookmark Reached
+  VoidCallback? onSynthesizerBookmarkReached;
+  // Synthesizer Canceled
+  ReasonResultHandler? onSynthesizerCanceled;
+  // Synthesizer Viseme Received
+  VoidCallback? onSynthesizerVisemeReceived;
+  // Synthesizer Word Boundary
+  VoidCallback? onSynthesizerWordBoundary;
 
   Future<void> _onMethodCall(MethodCall call) async {
     switch (call.method) {
@@ -63,6 +87,36 @@ class AzureSpeech {
         break;
       case "azureSpeech.onVolumeChange":
         onVolumeChange?.call(call.arguments);
+        break;
+      case "azureSpeech.onSynthesizerConnected":
+        onSynthesizerConnected?.call();
+        break;
+      case "azureSpeech.onSynthesizerDisconnected":
+        onSynthesizerDisconnected?.call();
+        break;
+      case "azureSpeech.onSynthesizerMessageReceived":
+        onSynthesizerMessageReceived?.call();
+        break;
+      case "azureSpeech.onSynthesizing":
+        onSynthesizing?.call();
+        break;
+      case "azureSpeech.onSynthesizerStarted":
+        onSynthesizerStarted?.call();
+        break;
+      case "azureSpeech.onSynthesizerCompleted":
+        onSynthesizerCompleted?.call();
+        break;
+      case "azureSpeech.onSynthesizerBookmarkReached":
+        onSynthesizerBookmarkReached?.call();
+        break;
+      case "azureSpeech.onSynthesizerCanceled":
+        onSynthesizerCanceled?.call(call.arguments);
+        break;
+      case "azureSpeech.onSynthesizerVisemeReceived":
+        onSynthesizerVisemeReceived?.call();
+        break;
+      case "azureSpeech.onSynthesizerWordBoundary":
+        onSynthesizerWordBoundary?.call();
         break;
       default:
         debugPrint("Error: method `${call.method}` not found");

@@ -15,6 +15,9 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+const sstText =
+    "Imagine the wildest idea that you've ever had, and you're curious about how it might scale to something that's a 100, a 1,000 times bigger. This is a place where you can get to do that.";
+
 class _MyAppState extends State<MyApp> {
   late final TextEditingController _controller;
   late final ScrollController _scrollController;
@@ -22,7 +25,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: sstText);
     _scrollController = ScrollController();
     _azureSpeech = AzureSpeech();
     super.initState();
@@ -38,7 +41,7 @@ class _MyAppState extends State<MyApp> {
 
   void _appendLogText(String text) {
     _controller.text += '\n$text';
-    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    Future.microtask(() => _scrollController.jumpTo(_scrollController.position.maxScrollExtent));
   }
 
   void _clear() {
@@ -46,7 +49,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   String _token =
-      'eyJhbGciOiJFUzI1NiIsImtpZCI6ImtleTEiLCJ0eXAiOiJKV1QifQ.eyJyZWdpb24iOiJzb3V0aGVhc3Rhc2lhIiwic3Vic2NyaXB0aW9uLWlkIjoiNTcyMDMwNmEzOTY0NGMxY2E2OTZlZGFjYjlmYzU1MmQiLCJwcm9kdWN0LWlkIjoiU3BlZWNoU2VydmljZXMuRjAiLCJjb2duaXRpdmUtc2VydmljZXMtZW5kcG9pbnQiOiJodHRwczovL2FwaS5jb2duaXRpdmUubWljcm9zb2Z0LmNvbS9pbnRlcm5hbC92MS4wLyIsImF6dXJlLXJlc291cmNlLWlkIjoiL3N1YnNjcmlwdGlvbnMvMTQ5NmQ5ZDktZGQzYi00ZjU3LTk3YWEtZmUzMzYxZGJhNDAwL3Jlc291cmNlR3JvdXBzL2FpZnVuLXZvaWNlL3Byb3ZpZGVycy9NaWNyb3NvZnQuQ29nbml0aXZlU2VydmljZXMvYWNjb3VudHMvYWlmdW4tc291dGhlYXN0Iiwic2NvcGUiOiJzcGVlY2hzZXJ2aWNlcyIsImF1ZCI6InVybjptcy5zcGVlY2hzZXJ2aWNlcy5zb3V0aGVhc3Rhc2lhIiwiZXhwIjoxNzE0NDgwNjgyLCJpc3MiOiJ1cm46bXMuY29nbml0aXZlc2VydmljZXMifQ.WRPsr3-iGG6TuorWVOrXm8LcJHBVFAQ0nqAjdRMK49MV01oD_V3j7LoKvCROW98u1K1tuGYiquNfEZojotI_dg';
+      'eyJhbGciOiJFUzI1NiIsImtpZCI6ImtleTEiLCJ0eXAiOiJKV1QifQ.eyJyZWdpb24iOiJzb3V0aGVhc3Rhc2lhIiwic3Vic2NyaXB0aW9uLWlkIjoiNTcyMDMwNmEzOTY0NGMxY2E2OTZlZGFjYjlmYzU1MmQiLCJwcm9kdWN0LWlkIjoiU3BlZWNoU2VydmljZXMuRjAiLCJjb2duaXRpdmUtc2VydmljZXMtZW5kcG9pbnQiOiJodHRwczovL2FwaS5jb2duaXRpdmUubWljcm9zb2Z0LmNvbS9pbnRlcm5hbC92MS4wLyIsImF6dXJlLXJlc291cmNlLWlkIjoiL3N1YnNjcmlwdGlvbnMvMTQ5NmQ5ZDktZGQzYi00ZjU3LTk3YWEtZmUzMzYxZGJhNDAwL3Jlc291cmNlR3JvdXBzL2FpZnVuLXZvaWNlL3Byb3ZpZGVycy9NaWNyb3NvZnQuQ29nbml0aXZlU2VydmljZXMvYWNjb3VudHMvYWlmdW4tc291dGhlYXN0Iiwic2NvcGUiOiJzcGVlY2hzZXJ2aWNlcyIsImF1ZCI6InVybjptcy5zcGVlY2hzZXJ2aWNlcy5zb3V0aGVhc3Rhc2lhIiwiZXhwIjoxNzE0OTk5NDk2LCJpc3MiOiJ1cm46bXMuY29nbml0aXZlc2VydmljZXMifQ.fbVfE1GLTGGdGjG4gLEzkwyWcCuJpasa1YJX-OngPmcP7nOnbrugy76NE4yoyhEMaUdoWe5u6wglMG66NeOTrg';
 
   Future<void> _prepareToken() async {
     // TODO: Refresh token if token is expired
@@ -85,8 +88,38 @@ class _MyAppState extends State<MyApp> {
           _isRecognizing = false;
         });
       };
-      _azureSpeech.onVolumeChange =(volume) {
+      _azureSpeech.onVolumeChange = (volume) {
         _appendLogText('VolumeChange: $volume');
+      };
+      _azureSpeech.onSynthesizerConnected = () {
+        _appendLogText('synthesizerConnected');
+      };
+      _azureSpeech.onSynthesizerDisconnected = () {
+        _appendLogText('synthesizerDisconnected');
+      };
+      _azureSpeech.onSynthesizerMessageReceived = () {
+        _appendLogText('synthesizerMessageReceived');
+      };
+      _azureSpeech.onSynthesizing = () {
+        _appendLogText('synthesizing');
+      };
+      _azureSpeech.onSynthesizerStarted = () {
+        _appendLogText('synthesizerStarted');
+      };
+      _azureSpeech.onSynthesizerCompleted = () {
+        _appendLogText('synthesizerCompleted');
+      };
+      _azureSpeech.onSynthesizerBookmarkReached = () {
+        _appendLogText('synthesizerBookmarkReached');
+      };
+      _azureSpeech.onSynthesizerCanceled = (reason) {
+        _appendLogText('synthesizerCanceled: $reason');
+      };
+      _azureSpeech.onSynthesizerVisemeReceived = () {
+        _appendLogText('synthesizerVisemeReceived');
+      };
+      _azureSpeech.onSynthesizerWordBoundary = () {
+        _appendLogText('synthesizerWordBoundary');
       };
     }
   }

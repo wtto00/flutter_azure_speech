@@ -46,7 +46,7 @@ class AzureSpeechPlugin : FlutterPlugin, MethodCallHandler {
             }
 
             "stopRecognition" -> {
-                stopRecognition(call, result)
+                stopRecognition(result)
             }
 
             else -> {
@@ -121,7 +121,7 @@ class AzureSpeechPlugin : FlutterPlugin, MethodCallHandler {
         recognizer!!.canceled.addEventListener { _, speechRecognitionCanceledEventArgs ->
             invokeMethod(
                 "azureSpeech.onRecognizerCanceled",
-                speechRecognitionCanceledEventArgs.errorCode.toString(),
+                speechRecognitionCanceledEventArgs.errorDetails,
             )
         }
         recognizer!!.sessionStarted.addEventListener { _, _ ->
@@ -165,10 +165,11 @@ class AzureSpeechPlugin : FlutterPlugin, MethodCallHandler {
             result.success(null);
         } catch (e: Exception) {
             channel.invokeMethod("azureSpeech.onException", "Exception: " + e.message)
+            result.error("-4", e.message, null);
         }
     }
 
-    private fun stopRecognition(call: MethodCall, result: Result) {
+    private fun stopRecognition(result: Result) {
         if (recognizer != null) {
             recognizer!!.stopContinuousRecognitionAsync().get();
         }
