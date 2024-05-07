@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:azure_speech/speech_style.dart';
+import 'package:azure_speech/synthesizer_option.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -41,15 +45,17 @@ class _MyAppState extends State<MyApp> {
 
   void _appendLogText(String text) {
     _controller.text += '\n$text';
-    Future.microtask(() => _scrollController.jumpTo(_scrollController.position.maxScrollExtent));
+    Timer(const Duration(milliseconds: 500), () {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    });
   }
 
   void _clear() {
-    _controller.clear();
+    _controller.text = sstText;
   }
 
   String _token =
-      'eyJhbGciOiJFUzI1NiIsImtpZCI6ImtleTEiLCJ0eXAiOiJKV1QifQ.eyJyZWdpb24iOiJzb3V0aGVhc3Rhc2lhIiwic3Vic2NyaXB0aW9uLWlkIjoiNTcyMDMwNmEzOTY0NGMxY2E2OTZlZGFjYjlmYzU1MmQiLCJwcm9kdWN0LWlkIjoiU3BlZWNoU2VydmljZXMuRjAiLCJjb2duaXRpdmUtc2VydmljZXMtZW5kcG9pbnQiOiJodHRwczovL2FwaS5jb2duaXRpdmUubWljcm9zb2Z0LmNvbS9pbnRlcm5hbC92MS4wLyIsImF6dXJlLXJlc291cmNlLWlkIjoiL3N1YnNjcmlwdGlvbnMvMTQ5NmQ5ZDktZGQzYi00ZjU3LTk3YWEtZmUzMzYxZGJhNDAwL3Jlc291cmNlR3JvdXBzL2FpZnVuLXZvaWNlL3Byb3ZpZGVycy9NaWNyb3NvZnQuQ29nbml0aXZlU2VydmljZXMvYWNjb3VudHMvYWlmdW4tc291dGhlYXN0Iiwic2NvcGUiOiJzcGVlY2hzZXJ2aWNlcyIsImF1ZCI6InVybjptcy5zcGVlY2hzZXJ2aWNlcy5zb3V0aGVhc3Rhc2lhIiwiZXhwIjoxNzE0OTk5NDk2LCJpc3MiOiJ1cm46bXMuY29nbml0aXZlc2VydmljZXMifQ.fbVfE1GLTGGdGjG4gLEzkwyWcCuJpasa1YJX-OngPmcP7nOnbrugy76NE4yoyhEMaUdoWe5u6wglMG66NeOTrg';
+      'eyJhbGciOiJFUzI1NiIsImtpZCI6ImtleTEiLCJ0eXAiOiJKV1QifQ.eyJyZWdpb24iOiJzb3V0aGVhc3Rhc2lhIiwic3Vic2NyaXB0aW9uLWlkIjoiNTcyMDMwNmEzOTY0NGMxY2E2OTZlZGFjYjlmYzU1MmQiLCJwcm9kdWN0LWlkIjoiU3BlZWNoU2VydmljZXMuRjAiLCJjb2duaXRpdmUtc2VydmljZXMtZW5kcG9pbnQiOiJodHRwczovL2FwaS5jb2duaXRpdmUubWljcm9zb2Z0LmNvbS9pbnRlcm5hbC92MS4wLyIsImF6dXJlLXJlc291cmNlLWlkIjoiL3N1YnNjcmlwdGlvbnMvMTQ5NmQ5ZDktZGQzYi00ZjU3LTk3YWEtZmUzMzYxZGJhNDAwL3Jlc291cmNlR3JvdXBzL2FpZnVuLXZvaWNlL3Byb3ZpZGVycy9NaWNyb3NvZnQuQ29nbml0aXZlU2VydmljZXMvYWNjb3VudHMvYWlmdW4tc291dGhlYXN0Iiwic2NvcGUiOiJzcGVlY2hzZXJ2aWNlcyIsImF1ZCI6InVybjptcy5zcGVlY2hzZXJ2aWNlcy5zb3V0aGVhc3Rhc2lhIiwiZXhwIjoxNzE1MDkwMjA0LCJpc3MiOiJ1cm46bXMuY29nbml0aXZlc2VydmljZXMifQ.8l7i6dsEWBHkyr4H6yYI5Vv1ywLIkJ8cQj8jn9VoaB_EPqEQ2ON36bYAdVkzzU2JSB7zNlGGQM2nq7cnJgHMcg';
 
   Future<void> _prepareToken() async {
     // TODO: Refresh token if token is expired
@@ -90,15 +96,24 @@ class _MyAppState extends State<MyApp> {
       };
       _azureSpeech.onVolumeChange = (volume) {
         _appendLogText('VolumeChange: $volume');
+        if (Platform.isAndroid) {
+          _appendLogText("isSpeaking: ${volume > 55}");
+        } else if (Platform.isIOS) {
+          _appendLogText("isSpeaking: ${volume > 1.5}");
+        }
       };
+
       _azureSpeech.onSynthesizerConnected = () {
+        setState(() {
+          _isSynthesizing = true;
+        });
         _appendLogText('synthesizerConnected');
       };
       _azureSpeech.onSynthesizerDisconnected = () {
+        setState(() {
+          _isSynthesizing = false;
+        });
         _appendLogText('synthesizerDisconnected');
-      };
-      _azureSpeech.onSynthesizerMessageReceived = () {
-        _appendLogText('synthesizerMessageReceived');
       };
       _azureSpeech.onSynthesizing = () {
         _appendLogText('synthesizing');
@@ -126,9 +141,25 @@ class _MyAppState extends State<MyApp> {
 
   bool _isSynthesizing = false;
 
-  void _startSynthesizing() {}
+  Future<void> _startSynthesizing() async {
+    if (!_isInited) {
+      _appendLogText('Speech is not inited.');
+      return;
+    }
+    await _prepareToken();
+    _azureSpeech.startSynthesizing(
+      token: _token,
+      options: SynthesizerOption(
+        text: sstText,
+        identifier: 'en-US-SaraNeural',
+        style: SpeechStyle.excited,
+      ),
+    );
+  }
 
-  void _stopSynthesizing() {}
+  void _stopSynthesizing() {
+    _azureSpeech.stopSynthesize();
+  }
 
   Future<bool> _requestPermission() async {
     final PermissionStatus status = await Permission.microphone.request();
@@ -181,12 +212,13 @@ class _MyAppState extends State<MyApp> {
                 controller: _controller,
                 scrollController: _scrollController,
                 maxLines: 10,
+                readOnly: true,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   FilledButton(
-                    onPressed: _startSynthesizing,
+                    onPressed: _isSynthesizing ? null : _startSynthesizing,
                     child: const Text('Start Synthesizing'),
                   ),
                   FilledButton(

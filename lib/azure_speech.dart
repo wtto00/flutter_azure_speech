@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:azure_speech/synthesizer_option.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -9,9 +10,9 @@ typedef ReasonResultHandler = void Function(String reason);
 typedef VolumeResultHandler = void Function(double volume);
 
 class AzureSpeech {
-  static const methodChannel = MethodChannel('azure_speech');
+  static const _methodChannel = MethodChannel('azure_speech');
   AzureSpeech() {
-    methodChannel.setMethodCallHandler(_onMethodCall);
+    _methodChannel.setMethodCallHandler(_onMethodCall);
   }
 
   // Exception handler.
@@ -36,8 +37,6 @@ class AzureSpeech {
   VoidCallback? onSynthesizerConnected;
   // Synthesizer Disconnecte
   VoidCallback? onSynthesizerDisconnected;
-  // Synthesizer Message Received
-  VoidCallback? onSynthesizerMessageReceived;
   // Synthesizing
   VoidCallback? onSynthesizing;
   // Synthesizer Started
@@ -55,11 +54,11 @@ class AzureSpeech {
 
   Future<void> _onMethodCall(MethodCall call) async {
     switch (call.method) {
-      case "azureSpeech.onRecognizing":
+      case "azure_speech.onRecognizing":
         onRecognizing?.call(call.arguments);
         _clearRecognizerTimer();
         break;
-      case "azureSpeech.onRecognized":
+      case "azure_speech.onRecognized":
         onRecognized?.call(call.arguments);
         if (_silenceTimeout.compareTo(Duration.zero) > 0) {
           _recognizerTimer = Timer(_silenceTimeout, () {
@@ -67,10 +66,10 @@ class AzureSpeech {
           });
         }
         break;
-      case "azureSpeech.onRecognizerCanceled":
+      case "azure_speech.onRecognizerCanceled":
         onRecognizerCanceled?.call(call.arguments);
         break;
-      case "azureSpeech.onRecognizerSessionStarted":
+      case "azure_speech.onRecognizerSessionStarted":
         onRecognizerSessionStarted?.call();
         _clearRecognizerTimer();
         if (_silenceTimeout.compareTo(Duration.zero) > 0) {
@@ -79,43 +78,46 @@ class AzureSpeech {
           });
         }
         break;
-      case "azureSpeech.onRecognizerSessionStopped":
+      case "azure_speech.onRecognizerSessionStopped":
         onRecognizerSessionStopped?.call();
         break;
-      case "azureSpeech.onException":
+      case "azure_speech.onRecognizerStartDetected":
+        onRecognizerStartDetected?.call();
+        break;
+      case "azure_speech.onRecognizerEndDetected":
+        onRecognizerEndDetected?.call();
+        break;
+      case "azure_speech.onException":
         onException?.call(call.arguments);
         break;
-      case "azureSpeech.onVolumeChange":
+      case "azure_speech.onVolumeChange":
         onVolumeChange?.call(call.arguments);
         break;
-      case "azureSpeech.onSynthesizerConnected":
+      case "azure_speech.onSynthesizerConnected":
         onSynthesizerConnected?.call();
         break;
-      case "azureSpeech.onSynthesizerDisconnected":
+      case "azure_speech.onSynthesizerDisconnected":
         onSynthesizerDisconnected?.call();
         break;
-      case "azureSpeech.onSynthesizerMessageReceived":
-        onSynthesizerMessageReceived?.call();
-        break;
-      case "azureSpeech.onSynthesizing":
+      case "azure_speech.onSynthesizing":
         onSynthesizing?.call();
         break;
-      case "azureSpeech.onSynthesizerStarted":
+      case "azure_speech.onSynthesizerStarted":
         onSynthesizerStarted?.call();
         break;
-      case "azureSpeech.onSynthesizerCompleted":
+      case "azure_speech.onSynthesizerCompleted":
         onSynthesizerCompleted?.call();
         break;
-      case "azureSpeech.onSynthesizerBookmarkReached":
+      case "azure_speech.onSynthesizerBookmarkReached":
         onSynthesizerBookmarkReached?.call();
         break;
-      case "azureSpeech.onSynthesizerCanceled":
+      case "azure_speech.onSynthesizerCanceled":
         onSynthesizerCanceled?.call(call.arguments);
         break;
-      case "azureSpeech.onSynthesizerVisemeReceived":
+      case "azure_speech.onSynthesizerVisemeReceived":
         onSynthesizerVisemeReceived?.call();
         break;
-      case "azureSpeech.onSynthesizerWordBoundary":
+      case "azure_speech.onSynthesizerWordBoundary":
         onSynthesizerWordBoundary?.call();
         break;
       default:
@@ -135,7 +137,7 @@ class AzureSpeech {
     String? authorizationToken,
     required String region,
   }) async {
-    return await methodChannel.invokeMethod<bool>('buildConfig', {
+    return await _methodChannel.invokeMethod<bool>('buildConfig', {
           'subscriptionKey': subscriptionKey,
           'authorizationToken': authorizationToken,
           'region': region,
@@ -152,7 +154,7 @@ class AzureSpeech {
     }
   }
 
-  /// start recognizing
+  /// Start recognizing
   ///
   /// [token] Authorization Token from service.
   /// If null, will use last [authorizationToken] or [subscriptionKey] in initializeRecognizer.
@@ -169,15 +171,28 @@ class AzureSpeech {
     Duration? silenceTimeout,
   }) {
     if (silenceTimeout != null) _silenceTimeout = silenceTimeout;
-    return methodChannel.invokeMethod('startRecognizing', {
+    return _methodChannel.invokeMethod('startRecognizing', {
       'token': token,
       'language': language,
     });
   }
 
-  /// stop recognizing
+  /// Stop recognizing
   Future stopRecognition() {
     _clearRecognizerTimer();
-    return methodChannel.invokeMethod('stopRecognition');
+    return _methodChannel.invokeMethod('stopRecognition');
+  }
+
+  /// Start Synthesizing
+  Future startSynthesizing({String? token, required SynthesizerOption options}) {
+    return _methodChannel.invokeMethod('startSynthesizing', {
+      'token': token,
+      'options': options.toJson(),
+    });
+  }
+
+  /// Stop Synthesize
+  Future stopSynthesize() {
+    return _methodChannel.invokeMethod('stopSynthesize');
   }
 }

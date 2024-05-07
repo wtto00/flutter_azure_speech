@@ -32,20 +32,6 @@ class MicrophoneStream(val onVolumeChange: ((Double) -> Unit)? = null) : PullAud
         recorder!!.startRecording();
     }
 
-    fun getFormat(): AudioFormat {
-        return format
-    }
-
-    fun getAudio(): ByteArray {
-//        int bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE,
-//                AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-//        int size = this.recorder.getBufferSizeInFrames();
-//        https://stackoverflow.com/questions/8499042/android-audiorecord-example/13487250#13487250
-        val audioBytes = ByteArray(1024000000)
-        val res = read(audioBytes)
-        return audioBytes
-    }
-
     override fun read(dataBuffer: ByteArray?): Int {
         if (recorder != null && dataBuffer != null) {
             val ret: Long = recorder!!.read(dataBuffer, 0, dataBuffer.size).toLong()
