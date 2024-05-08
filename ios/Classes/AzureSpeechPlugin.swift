@@ -190,14 +190,15 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
     ) { (buffer, time) in
       let outputBufferCapacity = AVAudioFrameCount(buffer.duration * recordingFormat!.sampleRate)
 
-        // 获取实时音量
-        let channelDataValue = buffer.floatChannelData?.pointee
-        let channelDataValueArray = stride(from: 0, to: Int(buffer.frameLength), by: buffer.stride).map{ channelDataValue?[$0] ?? 0 }
-        let rms = sqrt(channelDataValueArray.map{ $0 * $0 }.reduce(0, +) / Float(buffer.frameLength))
-        let avgPower = 20 * log10(rms)
-        let volume = pow(10, avgPower / 20) * 100
-        self.invokeMethod("azure_speech.onVolumeChange", arguments: volume)
-        
+      // 获取实时音量
+      let channelDataValue = buffer.floatChannelData?.pointee
+      let channelDataValueArray = stride(from: 0, to: Int(buffer.frameLength), by: buffer.stride)
+        .map { channelDataValue?[$0] ?? 0 }
+      let rms = sqrt(channelDataValueArray.map { $0 * $0 }.reduce(0, +) / Float(buffer.frameLength))
+      let avgPower = 20 * log10(rms)
+      let volume = pow(10, avgPower / 20) * 100
+      self.invokeMethod("azure_speech.onVolumeChange", arguments: volume)
+
       guard
         let pcmBuffer = AVAudioPCMBuffer(
           pcmFormat: recordingFormat!, frameCapacity: outputBufferCapacity)
@@ -247,7 +248,7 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
 
   private var synthesizer: SPXSpeechSynthesizer? = nil
   private var connection: SPXConnection? = nil
-  private func createSynthesizer(_ token: String) throws {
+  private func createSynthesizer() throws {
     let audioSession = AVAudioSession.sharedInstance()
     try audioSession.setCategory(AVAudioSession.Category.playAndRecord)
     try audioSession.overrideOutputAudioPort(AVAudioSession.PortOverride.speaker)
@@ -268,12 +269,6 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
     })
     synthesizer?.addSynthesisCompletedEventHandler({ _synthesizer, args in
       self.invokeMethod("azure_speech.onSynthesizerCompleted", arguments: nil)
-      do {
-        try self._stopSynthesize()
-      } catch {
-        self.invokeMethod(
-          "azure_speech.onException", arguments: "Exception: " + error.localizedDescription)
-      }
     })
     synthesizer?.addBookmarkReachedEventHandler({ _synthesizer, args in
       self.invokeMethod("azure_speech.onSynthesizerBookmarkReached", arguments: nil)
@@ -301,13 +296,16 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
       do {
         let args = call.arguments as? [String: Any]
         let token = args?["token"] as? String ?? ""
-        if self.synthesizer != nil {
-          try self._stopSynthesize()
+        if self.synthesizer == nil || self.connection == nil {
+          let success = self.buildSpeechConfig(
+            subscriptionKey: "", authorizationToken: token, region: "", result: result)
+          if !success { return }
+          try self.createSynthesizer()
+        } else {
+          try self.synthesizer!.stopSpeaking()
+          self.synthesizer!.authorizationToken = token
+          self.connection!.open(true)
         }
-        let success = self.buildSpeechConfig(
-          subscriptionKey: "", authorizationToken: token, region: "", result: result)
-        if !success { return }
-        try self.createSynthesizer(token)
         let options = args?["options"] as? [String: Any]
         let text = options?["text"] as? String ?? ""
         let identifier = options?["identifier"] as? String ?? ""
@@ -325,12 +323,12 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
           .replacingOccurrences(of: "<", with: "&lt;")
           .replacingOccurrences(of: ">", with: "&gt;")
           .replacingOccurrences(of: "\"", with: "&quot;")
-          .replacingOccurrences(of: "''", with: "&#39;")
+          .replacingOccurrences(of: "'", with: "&apos;")
         var mstts = ""
         if !role.isEmpty || !style.isEmpty {
           mstts.append("<mstts:express-as ")
           if !role.isEmpty {
-            mstts.append("role=\"\(role)\"")
+            mstts.append("role=\"\(role)\" ")
           }
           if !style.isEmpty {
             mstts.append("style=\"\(style)\"")
@@ -341,7 +339,8 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
         }
         let ssml =
           "<speak version='1.0' xml:lang='en-US' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts'><voice name='\(identifier)'>\(mstts)</voice></speak>"
-        try self.synthesizer?.speakSsml(ssml)
+        let speakResult = try self.synthesizer?.speakSsml(ssml)
+        print(speakResult?.reason ?? "")
         result(nil)
       } catch {
         self.invokeMethod(
@@ -352,9 +351,6 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
   }
   private func _stopSynthesize() throws {
     try synthesizer?.stopSpeaking()
-    connection?.close()
-    synthesizer = nil
-    connection = nil
   }
   private func stopSynthesize(result: @escaping FlutterResult) {
     runInBackground {

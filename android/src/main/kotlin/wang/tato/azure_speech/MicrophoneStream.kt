@@ -10,13 +10,13 @@ import kotlin.math.log10
 
 class MicrophoneStream(val onVolumeChange: ((Double) -> Unit)? = null) : PullAudioInputStreamCallback() {
 
-    private val sampleRate: Int = 16000;
+    private val sampleRate: Int = 16000
     private val format: AudioFormat = AudioFormat.Builder().setSampleRate(sampleRate)
         .setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_IN_MONO)
-        .build();
+        .build()
     private val bufferSize: Int = AudioRecord.getMinBufferSize(
         format.sampleRate, format.channelMask, format.encoding
-    );
+    )
     private var recorder: AudioRecord? = null
 
     init {
@@ -27,9 +27,9 @@ class MicrophoneStream(val onVolumeChange: ((Double) -> Unit)? = null) : PullAud
     fun initMic() {
         // Note: currently, the Speech SDK support 16 kHz sample rate, 16 bit samples, mono (single-channel) only.
         recorder = AudioRecord.Builder().setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
-            .setAudioFormat(format).build();
+            .setAudioFormat(format).build()
 
-        recorder!!.startRecording();
+        recorder!!.startRecording()
     }
 
     override fun read(dataBuffer: ByteArray?): Int {
@@ -44,7 +44,7 @@ class MicrophoneStream(val onVolumeChange: ((Double) -> Unit)? = null) : PullAud
             }
             val mean = v / r.toDouble()
             val volume = 10 * log10(mean)
-            onVolumeChange?.let { it(volume) };
+            onVolumeChange?.let { it(volume) }
 
             return ret.toInt()
         }
