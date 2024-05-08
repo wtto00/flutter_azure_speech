@@ -269,6 +269,12 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
     })
     synthesizer?.addSynthesisCompletedEventHandler({ _synthesizer, args in
       self.invokeMethod("azure_speech.onSynthesizerCompleted", arguments: nil)
+      do {
+        try self._stopSynthesize()
+      } catch {
+        self.invokeMethod(
+          "azure_speech.onException", arguments: "Exception: " + error.localizedDescription)
+      }
     })
     synthesizer?.addBookmarkReachedEventHandler({ _synthesizer, args in
       self.invokeMethod("azure_speech.onSynthesizerBookmarkReached", arguments: nil)
@@ -296,16 +302,13 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
       do {
         let args = call.arguments as? [String: Any]
         let token = args?["token"] as? String ?? ""
-        if self.synthesizer == nil || self.connection == nil {
-          let success = self.buildSpeechConfig(
-            subscriptionKey: "", authorizationToken: token, region: "", result: result)
-          if !success { return }
-          try self.createSynthesizer()
-        } else {
-          try self.synthesizer!.stopSpeaking()
-          self.synthesizer!.authorizationToken = token
-          self.connection!.open(true)
+        if self.synthesizer != nil {
+          try self._stopSynthesize()
         }
+        let success = self.buildSpeechConfig(
+          subscriptionKey: "", authorizationToken: token, region: "", result: result)
+        if !success { return }
+        try self.createSynthesizer()
         let options = args?["options"] as? [String: Any]
         let text = options?["text"] as? String ?? ""
         let identifier = options?["identifier"] as? String ?? ""
@@ -340,7 +343,7 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
         let ssml =
           "<speak version='1.0' xml:lang='en-US' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts'><voice name='\(identifier)'>\(mstts)</voice></speak>"
         let speakResult = try self.synthesizer?.speakSsml(ssml)
-        print(speakResult?.reason ?? "")
+        print(speakResult?.reason.rawValue ?? "")
         result(nil)
       } catch {
         self.invokeMethod(
@@ -351,6 +354,10 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
   }
   private func _stopSynthesize() throws {
     try synthesizer?.stopSpeaking()
+    // https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/2081#issuecomment-2099988971
+    connection?.close()
+    synthesizer = nil
+    connection = nil
   }
   private func stopSynthesize(result: @escaping FlutterResult) {
     runInBackground {
