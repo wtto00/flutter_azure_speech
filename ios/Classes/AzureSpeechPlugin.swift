@@ -340,7 +340,7 @@ public class AzureSpeechPlugin: NSObject, FlutterPlugin {
         let ssml =
           "<speak version='1.0' xml:lang='en-US' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts'><voice name='\(identifier)'>\(mstts)</voice></speak>"
         let speakResult = try self.synthesizer?.speakSsml(ssml)
-        print(speakResult?.reason ?? "")
+        print(speakResult?.reason.rawValue ?? "")
         result(nil)
       } catch {
         self.invokeMethod(
