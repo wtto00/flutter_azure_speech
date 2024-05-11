@@ -132,7 +132,7 @@ class AzureSpeechPlugin : FlutterPlugin, MethodCallHandler {
     private var recognizer: SpeechRecognizer? = null
     private var audioConfig: AudioConfig? = null
     private var microphoneStream: MicrophoneStream? = null
-    private fun createRecognizer(): SpeechRecognizer {
+    private fun createRecognizer() {
         microphoneStream = MicrophoneStream(onVolumeChange = { volume: Double ->
             invokeMethod(
                 "azure_speech.onVolumeChange", volume
@@ -167,7 +167,6 @@ class AzureSpeechPlugin : FlutterPlugin, MethodCallHandler {
         recognizer!!.speechEndDetected.addEventListener { _, _ ->
             invokeMethod("azure_speech.onRecognizerEndDetected", null)
         }
-        return recognizer!!
     }
 
     private fun closeRecognizer() {
@@ -198,7 +197,7 @@ class AzureSpeechPlugin : FlutterPlugin, MethodCallHandler {
                     recognizer!!.stopContinuousRecognitionAsync().get()
                     closeRecognizer()
                 }
-                recognizer = createRecognizer()
+                createRecognizer()
                 recognizer!!.startContinuousRecognitionAsync()
                 result.success(null)
             } catch (e: Exception) {
